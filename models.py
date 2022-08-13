@@ -1,6 +1,18 @@
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
+import enum
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+from sqlalchemy import Enum
+
+app = Flask(__name__)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 class Venue(db.Model):
     __tablename__ = 'venues'
 
