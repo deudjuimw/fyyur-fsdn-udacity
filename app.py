@@ -25,7 +25,9 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
+
+db.init_app(app)
 migrate = Migrate(app, db)
 
 # TODO: connect to a local postgresql database : DONE
@@ -138,24 +140,27 @@ def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   venue = Venue.query.get(venue_id)
-  shows = venue.shows
-  #venue.upcoming_shows = Show.query.filter(Show.start_time > datetime.now()).all()
-  #venue.past_shows = Show.query.filter(Show.start_time < datetime.now()).all()
+  #shows = venue.shows
+  
+  rs_past_shows = db.session.query(Show, Venue).join(Show).filter(Show.start_time < datetime.now()).filter_by(venue_id=venue_id).all()
+  rs_upcoming_shows = db.session.query(Show, Venue).join(Show).filter(Show.start_time > datetime.now()).filter_by(venue_id=venue_id).all()
 
-  for show in shows:
-    if show.start_time > datetime.now():
-      venue.upcoming_shows.append({
-        'artist_id': show.artist_id,
-        'artist_name' : show.artist.name,
-        'artist_image_link' : show.artist.image_link,
-        'start_time' : show.start_time
-      })
-    else:
-      venue.past_shows.append({
-        'artist_id': show.artist_id,
-        'artist_name' : show.artist.name,
-        'artist_image_link' : show.artist.image_link,
-        'start_time' : show.start_time
+  venue.past_shows = [] #Show.query.filter(Show.start_time < datetime.now())
+  venue.upcoming_shows = [] #Show.query.filter(Show.start_time > datetime.now()) 
+
+  for show, venue in rs_upcoming_shows:    
+    venue.upcoming_shows.append({
+      'artist_id': show.artist_id,
+      'artist_name' : show.artist.name,
+      'artist_image_link' : show.artist.image_link,
+      'start_time' : show.start_time
+    })
+  for show, venue in rs_past_shows: 
+    venue.past_shows.append({
+      'artist_id': show.artist_id,
+      'artist_name' : show.artist.name,
+      'artist_image_link' : show.artist.image_link,
+      'start_time' : show.start_time
     })
 
 
@@ -276,25 +281,24 @@ def show_artist(artist_id):
   # TODO: replace with real artist data from the artist table, using artist_id
   artist = Artist.query.get(artist_id)
   
-  shows = artist.shows #Show.query.filter(artist_id).all()
+  rs_past_shows = db.session.query(Show, Artist).join(Show).filter(Show.start_time < datetime.now()).filter_by(artist_id=artist_id).all()
+  rs_upcoming_shows = db.session.query(Show, Artist).join(Show).filter(Show.start_time > datetime.now()).filter_by(artist_id=artist_id).all()
+
+  #raise Exception(rs_past_shows)
+
+  #shows = artist.shows #Show.query.filter(artist_id).all()
   
-  #artist.past_shows = Show.query.filter(Show.start_time < datetime.now())
-  #artist.upcoming_shows = Show.query.filter(Show.start_time > datetime.now()) 
+  artist.past_shows = [] #Show.query.filter(Show.start_time < datetime.now())
+  artist.upcoming_shows = [] #Show.query.filter(Show.start_time > datetime.now()) 
 
-
-
-  #past_shows = []
-  #upcoming_shows = []
-  
-  for show in shows:
-    if show.start_time > datetime.now():
+  for show, artist in rs_upcoming_shows:    
       artist.upcoming_shows.append({
         'venue_id': show.venue_id,
         'venue_name' : show.venue.name,
         'venue_image_link' : show.venue.image_link,
         'start_time' : show.start_time
       })
-    else:
+  for show, artist in rs_past_shows:    
       artist.past_shows.append({
         'venue_id': show.venue_id,
         'venue_name' : show.venue.name,
